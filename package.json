@@ -1,38 +1,39 @@
 {
-  "name": "data-report-generator",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@testing-library/jest-dom": "^5.16.4",
-    "@testing-library/react": "^13.3.0",
-    "@testing-library/user-event": "^13.5.0",
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0",
-    "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4"
-  },
+  "name": "graph",
+  "version": "1.0.0",
+  "description": "graph - 2graphs read data from database",
+  "main": "SetupServer.js",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon db",
+    "client": "cd fe && npm start"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "csvtojson": "^2.0.10",
+    "dotenv": "^8.2.0",
+    "ejs": "^3.1.6",
+    "express": "^4.17.1",
+    "fast-csv": "^4.3.6",
+    "formidable": "^1.2.2",
+    "fs": "0.0.1-security",
+    "http": "0.0.1-security",
+    "jade": "^1.11.0",
+    "jsdom": "^16.4.0",
+    "mongodb": "^3.6.3",
+    "mongoose": "^5.11.11",
+    "mysql": "^2.18.1",
+    "nodemailer": "^6.4.17",
+    "nodemon": "^2.0.7",
+    "path": "^0.12.7",
+    "pug": "^3.0.0",
+    "request": "^2.88.2",
+    "router": "^1.3.5",
+    "xmlhttprequest": "^1.8.0"
   }
 }
