@@ -102,9 +102,9 @@ http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=150&slotno4_
 DataReport.downloadDataAndAddToDB = (selectedSlots) => {
 console.log('selected', selectedSlots);
   const allSlots = [
-    { id: 1, name: 'RA Temp', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=1&datentyp=5&bezeichnung=%22RA%20Temp%22&trenner=,' },
-    { id: 2, name: 'RA Humid', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=2&datentyp=5&bezeichnung=%22RA%20Humid%22&trenner=,'},
-    { id: 3, name: 'RA CO2', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=3&datentyp=5&bezeichnung=%22RA%20CO2%22&trenner=,' },
+    { id: 1, name: 'RATemp', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=1&datentyp=5&bezeichnung=%22RA%20Temp%22&trenner=,' },
+    { id: 2, name: 'RAHumid', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=2&datentyp=5&bezeichnung=%22RA%20Humid%22&trenner=,'},
+    { id: 3, name: 'RACO2', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=3&datentyp=5&bezeichnung=%22RA%20CO2%22&trenner=,' },
     { id: 4, name: 'Temperature', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=4&datentyp=5&bezeichnung=%22Temperature%22&trenner=,'},
     { id: 5, name: 'Humidity', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=5&datentyp=5&bezeichnung=%22Humidity%22&trenner=,'},
     { id: 6, name: 'PM2.5', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=6&datentyp=5&bezeichnung=%22PM2.5%22&trenner=,'},
@@ -126,15 +126,16 @@ console.log('selected', selectedSlots);
    const downloadSlots = [];
 
    for(let slot of selectedSlots) {
-       downloadSlots.push(allSlots[slot]);
+       downloadSlots.push(allSlots[slot-1]);
      }
 
-console.log('download',downloadSlots);
-  downloadDataAndAddToDB(downloadSlots);
-  //addCSVDataIntoDatabase();
+  // downlolad slot to local CSV files
+   downloadDataIntoDatabase(downloadSlots);
+
+
 }
 
-async function downloadDataAndAddToDB(downloadSlots) {
+async function downloadDataIntoDatabase(downloadSlots) {
 
   let localCSVFileName;
   let errors = [];
@@ -146,7 +147,7 @@ async function downloadDataAndAddToDB(downloadSlots) {
 
       const response = await downloadPage(localCSVFileName, slot.url);
       console.log(response + localCSVFileName);
-
+      addCSVDataIntoDatabase(slot);
     } catch (error) {
       console.error(localCSVFileName + " ERROR: " + error);
       errors.push(error)
@@ -154,10 +155,8 @@ async function downloadDataAndAddToDB(downloadSlots) {
   }
 
   if (!errors.length) {
-    console.log("Sucessfully downloaded all csv files")
+    console.log("Sucessfully downloaded all csv files and updated database")
   }
-
-  //addCSVDataIntoDatabase();
 }
 
 
@@ -191,44 +190,45 @@ function downloadPage(downloadCSVFileName, url, retries = 5, timeoutTime = 300) 
   });
 }
 
-function addCSVDataIntoDatabase() {
+function addCSVDataIntoDatabase(slot) {
   // mongoimport - d deosDB - c ratemps--drop--file "C:\Users\pippy\Documents\Web Development\DataReportGenerator-main\RATemp.csv"--type = csv--parseGrace skipRow--fields = \"Date.date_ms("
   // mm - dd - yyyy "),Time.date_ms("
   // H: mm: ss "),Value.double()\" --columnsHaveTypes
-
+    console.log('start add csv to db', slot.name);
     for (let i = 0; i < DataList.length; i++) {
       //let dbName = name[i].replace(/ /g, '');
+
+      if(DataList[i].modelName == slot.name) {
       let dbName = DataList[i].collection.collectionName;
-      const filePath = path.join(__dirname, "../csv/" + name[i]);
+
+      const filePath = path.join(__dirname, "../csv/" + DataList[i].modelName);
       let command = `mongoimport -d deosDB -c ${dbName} --drop --file "${filePath}.csv" --type=csv --parseGrace skipRow --fields="Date.string(),Time.string(),Value.double()" --columnsHaveTypes`;
       //let command = "mongoimport -d deosDB -c " + dbName + " --drop --file \"" + __dirname + "\\" + name[i] + ".csv\" --type=csv --parseGrace skipRow --fields=\"Date.string(),Time.string(),Value.double()\" --columnsHaveTypes ";
-      console.log(command);
       exec(command, (err, stdout, stderr) => {
         if (err)
           console.log(err);
       });
     }
-    setTimeout(deleteHeaderFromDB, 5000);
-    addDataIntoDeosDB();
+  }
+    setTimeout(deleteHeaderFromDB, 5000, slot);
+
 }
 
-function deleteHeaderFromDB()
+function deleteHeaderFromDB(slot)
 {
+  console.log('delete header from db', slot.name);
   for (let i = 0; i < DataList.length; i++) {
+      if(DataList[i].modelName == slot.name) {
+
     DataList[i].deleteOne( {Value: {$exists: false}}, err => {
       if (err)
         console.log(err);
     }).then(result => {
-      console.log(DataList[i].collection.collectionName);
       console.log(result);
     });
   }
 }
-
-function addDataIntoDeosDB() {
-
 }
-
 
 module.exports = DataReport;
 

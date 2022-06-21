@@ -1,38 +1,26 @@
 import logo from './logo.svg';
 import './App.css';
 import * as React from "react";
+
 import Button from '@mui/material/Button';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Box from '@mui/material/Box';
 
 import axios from 'axios';
 import { DataGrid } from '@mui/x-data-grid';
 
-
+import myGif from './assets/pokemon-slapping.gif';
 
 const columns = [
   { field: 'id', headerName: 'Slot' },
   { field: 'name', headerName: 'Description', width: 400 },
-  { field: 'timeline', headerName: 'Time Period', width: 400},
+  { field: 'timeline', headerName: 'Time Period', width: 450},
 
 ];
 
-// const rows = [
-//   { id: 1, description: 'RA Temp' },
-//   { id: 2, description: 'RA Humid'},
-//   { id: 3, description: 'RA CO2' },
-//   { id: 4, description: 'Temperature'},
-//   { id: 5, description: 'Humidity'},
-//   { id: 6, description: 'PM 2.5'},
-//   { id: 7, description: 'VOC'},
-//   { id: 8, description: 'CO2'},
-//   { id: 9, description: 'Test'},
-// ];
-
-
-
 const buttonHandler = (event) => {
 console.log(selectedIDs);
-
-console.log(`http://localhost:8080/downloadSlots`);
    axios.post(`http://localhost:8080/downloadSlots`, selectedIDs)
        .then(response => console.log(response))
        .catch(error => {
