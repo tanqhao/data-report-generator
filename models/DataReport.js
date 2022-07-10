@@ -13,22 +13,34 @@ const ObjectId = mongoose.Types.ObjectId;
 
 const Schema = mongoose.Schema;
 
+// const deosSchema = new Schema({
+//   Date: Date,
+//   Data: {sec: {sensor: Number}}
+// });
+
+
+
 const deosSchema = new Schema({
-  Date: Date,
-  Data: {sec: {sensor: Number}}
+  Date: String,
+  Time: String,
+  Value: Number,
+  Timestamp: Date
 });
+
 
 const deosData = mongoose.model("deosData", deosSchema);
 
 const RATempData = mongoose.model("RATemp", deosSchema);
 const RAHumidData = mongoose.model("RAHumid", deosSchema);
 const RACO2Data = mongoose.model("RACO2", deosSchema);
-const TempData = mongoose.model("Temp", deosSchema);
+const TempData = mongoose.model("Temperature", deosSchema);
 const HumidityData = mongoose.model("Humidity", deosSchema);
 const PM25Data = mongoose.model("PM2.5", deosSchema);
 const VOCData = mongoose.model("VOC", deosSchema);
-const CO2 = mongoose.model("C02", deosSchema);
+const CO2Data = mongoose.model("C02", deosSchema);
 const RATemp249Data = mongoose.model("RATemp249", deosSchema);
+
+const TestData = mongoose.model("test", deosSchema);
 
 const DataList = [
   RATempData,
@@ -38,18 +50,38 @@ const DataList = [
   HumidityData,
   PM25Data,
   VOCData,
-  CO2//,
+  CO2Data//,
   //RATemp249Data
 ];
+
+
+const allSlots = [
+  { id: 1, name: 'RATemp', db: RATempData, url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=1&datentyp=5&bezeichnung=%22RA%20Temp%22&trenner=,' },
+  { id: 2, name: 'RAHumid', db: RAHumidData, url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=2&datentyp=5&bezeichnung=%22RA%20Humid%22&trenner=,'},
+  { id: 3, name: 'RACO2', db: RACO2Data, url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=3&datentyp=5&bezeichnung=%22RA%20CO2%22&trenner=,' },
+  { id: 4, name: 'Temperature', db: TempData, url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=4&datentyp=5&bezeichnung=%22Temperature%22&trenner=,'},
+  { id: 5, name: 'Humidity', db: HumidityData, url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=5&datentyp=5&bezeichnung=%22Humidity%22&trenner=,'},
+  { id: 6, name: 'PM2.5', db: PM25Data, url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=6&datentyp=5&bezeichnung=%22PM2.5%22&trenner=,'},
+  { id: 7, name: 'VOC', db: VOCData, url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=7&datentyp=5&bezeichnung=%22VOC%22&trenner=,'},
+  { id: 8, name: 'C02', db: CO2Data, url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=8&datentyp=5&bezeichnung=%22C02%22&trenner=,'}
+];
+
+const allDownloadUrl = [
+   "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=1&datentyp=5&bezeichnung=%22RA%20Temp%22&trenner=,",
+   "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=2&datentyp=5&bezeichnung=%22RA%20Humid%22&trenner=,",
+   "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=3&datentyp=5&bezeichnung=%22RA%20CO2%22&trenner=,",
+   "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=4&datentyp=5&bezeichnung=%22Temperature%22&trenner=,",
+   "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=5&datentyp=5&bezeichnung=%22Humidity%22&trenner=,",
+   "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=6&datentyp=5&bezeichnung=%22PM2.5%22&trenner=,",
+   "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=7&datentyp=5&bezeichnung=%22VOC%22&trenner=,",
+   "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=8&datentyp=5&bezeichnung=%22C02%22&trenner=,"
+ ];
 
 let XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
 const jsdom = require('jsdom');
 const {
   JSDOM
 } = jsdom;
-
-
-
 
 function httpGet(theUrl) {
   var xmlHttp = new XMLHttpRequest();
@@ -64,7 +96,7 @@ let DataReport = function(){};
 
 DataReport.getSlots = async (req) => {
 
-  let maxCount = 10;
+  let maxCount = 9;
   // Get content in html nameUrl
   let html = httpGet(nameUrl);
   const dom = new JSDOM(html);
@@ -86,7 +118,7 @@ DataReport.getSlots = async (req) => {
       counter++;
     }
   }
-
+  console.log('get slots', slotNames);
   return slotNames;
 };
 
@@ -101,27 +133,6 @@ http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=150&slotno4_
 
 DataReport.downloadDataAndAddToDB = (selectedSlots) => {
 console.log('selected', selectedSlots);
-  const allSlots = [
-    { id: 1, name: 'RATemp', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=1&datentyp=5&bezeichnung=%22RA%20Temp%22&trenner=,' },
-    { id: 2, name: 'RAHumid', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=2&datentyp=5&bezeichnung=%22RA%20Humid%22&trenner=,'},
-    { id: 3, name: 'RACO2', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=3&datentyp=5&bezeichnung=%22RA%20CO2%22&trenner=,' },
-    { id: 4, name: 'Temperature', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=4&datentyp=5&bezeichnung=%22Temperature%22&trenner=,'},
-    { id: 5, name: 'Humidity', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=5&datentyp=5&bezeichnung=%22Humidity%22&trenner=,'},
-    { id: 6, name: 'PM2.5', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=6&datentyp=5&bezeichnung=%22PM2.5%22&trenner=,'},
-    { id: 7, name: 'VO2', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=7&datentyp=5&bezeichnung=%22VOC%22&trenner=,'},
-    { id: 8, name: 'CO2', url: 'http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=8&datentyp=5&bezeichnung=%22C02%22&trenner=,'}
-  ];
-
-  const allDownloadUrl = [
-     "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=1&datentyp=5&bezeichnung=%22RA%20Temp%22&trenner=,",
-     "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=2&datentyp=5&bezeichnung=%22RA%20Humid%22&trenner=,",
-     "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=3&datentyp=5&bezeichnung=%22RA%20CO2%22&trenner=,",
-     "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=4&datentyp=5&bezeichnung=%22Temperature%22&trenner=,",
-     "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=5&datentyp=5&bezeichnung=%22Humidity%22&trenner=,",
-     "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=6&datentyp=5&bezeichnung=%22PM2.5%22&trenner=,",
-     "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=7&datentyp=5&bezeichnung=%22VOC%22&trenner=,",
-     "http://deos.asuscomm.com/cgi-bin/cosmobdf.cgi?module=trend&function=117&slotno=8&datentyp=5&bezeichnung=%22C02%22&trenner=,"
-   ];
 
    const downloadSlots = [];
 
@@ -131,9 +142,10 @@ console.log('selected', selectedSlots);
 
   // downlolad slot to local CSV files
    downloadDataIntoDatabase(downloadSlots);
-
-
+   //addCSVDataIntoDatabase(downloadSlots[0]);
 }
+
+
 
 async function downloadDataIntoDatabase(downloadSlots) {
 
@@ -195,14 +207,20 @@ function addCSVDataIntoDatabase(slot) {
   // mm - dd - yyyy "),Time.date_ms("
   // H: mm: ss "),Value.double()\" --columnsHaveTypes
     console.log('start add csv to db', slot.name);
-    for (let i = 0; i < DataList.length; i++) {
+    for (let i = 0; i < allSlots.length; i++) {
       //let dbName = name[i].replace(/ /g, '');
+      //console.log(DataList[i].collectionName);
+      if(allSlots[i].name == slot.name) {
+      let dbName = allSlots[i].db.collection.collectionName;
+      console.log('model', allSlots[i].name);
+      console.log('slot', slot.name);
+      console.log(allSlots[i].db.collection.collectionName);
 
-      if(DataList[i].modelName == slot.name) {
-      let dbName = DataList[i].collection.collectionName;
 
-      const filePath = path.join(__dirname, "../csv/" + DataList[i].modelName);
+
+      const filePath = path.join(__dirname, "../csv/" + allSlots[i].db.modelName);
       let command = `mongoimport -d deosDB -c ${dbName} --drop --file "${filePath}.csv" --type=csv --parseGrace skipRow --fields="Date.string(),Time.string(),Value.double()" --columnsHaveTypes`;
+      console.log('command', command);
       //let command = "mongoimport -d deosDB -c " + dbName + " --drop --file \"" + __dirname + "\\" + name[i] + ".csv\" --type=csv --parseGrace skipRow --fields=\"Date.string(),Time.string(),Value.double()\" --columnsHaveTypes ";
       exec(command, (err, stdout, stderr) => {
         if (err)
@@ -210,28 +228,75 @@ function addCSVDataIntoDatabase(slot) {
       });
     }
   }
-    setTimeout(deleteHeaderFromDB, 5000, slot);
+    setTimeout(deleteHeaderAndAddDateFromDB, 5000, slot);
 
 }
 
-function deleteHeaderFromDB(slot)
+function deleteHeaderAndAddDateFromDB(slot)
 {
   console.log('delete header from db', slot.name);
+  console.log('Converting and adding timestamp to db', slot.name);
   for (let i = 0; i < DataList.length; i++) {
-      if(DataList[i].modelName == slot.name) {
+        if(DataList[i].modelName == slot.name) {
 
-    DataList[i].deleteOne( {Value: {$exists: false}}, err => {
-      if (err)
-        console.log(err);
-    }).then(result => {
-      console.log(result);
-    });
+      // delete header in db
+      DataList[i].deleteOne( {Value: {$exists: false}}, err => {
+        if (err)
+          console.log(err);
+      }).then(result => {
+        console.log(result);
+      });
+
+      // add Date object in db
+      DataList[i].find({}).then(datas => {
+        datas.forEach(data => {
+
+          let strDate = data.Date.split('-');
+          let strTime = data.Time.split(':');
+
+          let date = new Date(strDate[2], strDate[0], strDate[1], strTime[0], strTime[1], strTime[2], 0);
+
+           DataList[i].updateOne( {_id: data._id}, [
+             { $addFields: {Timestamp: date} }], err => {
+               if(err)
+               console.log(err);
+             });
+          });
+      });
+    }
   }
 }
+
+DataReport.querySlotGraphData = async(query) => {
+  console.log('query slot graph', query);
+
+  let date = new Date();
+  console.log('date', date.toLocaleDateString());
+  console.log('time', date.toJSON());
+
+  for(let slot of allSlots) {
+    if(slot.id == query.id)
+    {
+      //console.log(slot);
+        try {
+          const collection = await slot.db.find(
+            { }, null, {
+            limit: 150
+          }).sort().exec();
+          //console.log(collection);
+          return collection;
+        } catch (err) {
+          console.log('err', err);
+          return err;
+        }
+    }
+  }
 }
 
 module.exports = DataReport;
 
+// db.getCollection('ratemps').find(  {
+//     Date: '07-09-2022',Time:  { $gte :  '14:00:00', $lte : '14:30:00'} })
 
 // function emailOutputData() {
 //   var transporter = nodemailer.createTransport({

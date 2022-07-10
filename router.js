@@ -8,5 +8,6 @@ router.use(cors());
 
 router.get('/', dataReportController.home);
 router.post('/downloadSlots', dataReportController.confirm);
+router.get('/getSlotGraphData', dataReportController.graph);
 
 module.exports = router;

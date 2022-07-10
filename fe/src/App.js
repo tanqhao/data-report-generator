@@ -1,80 +1,57 @@
-import logo from './logo.svg';
+
 import './App.css';
 import * as React from "react";
 
-import Button from '@mui/material/Button';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress'
 
-import axios from 'axios';
-import { DataGrid } from '@mui/x-data-grid';
+import ButtonAppBar from './components/AppBar';
+import Slots from './components/Slots';
+import Graphs from './components/Graphs';
 
 import myGif from './assets/pokemon-slapping.gif';
+import logo from './assets/DEOS-Logo-CMYK.png';
 
-const columns = [
-  { field: 'id', headerName: 'Slot' },
-  { field: 'name', headerName: 'Description', width: 400 },
-  { field: 'timeline', headerName: 'Time Period', width: 450},
-
-];
-
-const buttonHandler = (event) => {
-console.log(selectedIDs);
-   axios.post(`http://localhost:8080/downloadSlots`, selectedIDs)
-       .then(response => console.log(response))
-       .catch(error => {
-           console.error('There was an error!', error);
-       });
-}
-
-let selectedIDs;
+import axios from 'axios';
 
 function App() {
-   const [selectionModel, setSelectionModel] = React.useState([]);
-   const [rows, setRows] = React.useState([]);
+  const[showSlots, setShowSlots] = React.useState(true);
+  const[slotsName, setSlotsName] = React.useState();
+  const[slotsNameGot, setSlotsNameGot] = React.useState(false);
 
-   // on first load
-   React.useEffect(() => {
-     axios.get('http://localhost:8080')
-         .then(response => {
-           setRows(response.data)
-         })
-         .catch(error => {
-             console.error('There was an error!', error);
-         });
-   }, []);
+  const appBarButtonHandler = (selectedPage) => {
+    (selectedPage === 'slots') ? setShowSlots(true) : setShowSlots(false);
+  }
+
+  React.useEffect(() => {
+    axios.get('http://localhost:8080')
+        .then(response => {
+          setSlotsName(response.data)
+          setSlotsNameGot(true);
+        })
+        .catch(error => {
+            console.error('Error retrieving slots!', error);
+        });
+  }, []);
 
   return (
+
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
+        <div style={{ height: '70%', width: '75%', background: 'white' }}>
 
-        <div style={{ height: 580, width: '40%', background: 'white' }}>
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            checkboxSelection
-            pageSize={9}
-            rowsPerPageOptions={[9]}
-            hideFooterPagination
-            onSelectionModelChange={(selected) => {
-              console.log(selected);
-               setSelectionModel(selected);
-               selectedIDs = selected;
-             }
-           }
+        <ButtonAppBar onPageSelected={appBarButtonHandler}/>
 
-          />
+        {showSlots ?
+          ( slotsNameGot ?
+            (<Slots slotsName={slotsName} />) : (<CircularProgress />)
+          )
+          : (<Graphs slotsName={slotsName} />)}
+
         </div>
-
-        <div>
-          <Button variant="contained" onClick={() => buttonHandler(selectionModel)}>
-          Download Slots
-          </Button>
-        </div>
-
       </header>
+
     </div>
   );
 }
