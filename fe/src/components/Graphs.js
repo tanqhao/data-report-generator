@@ -38,6 +38,7 @@ const Graphs = (props) => {
   });
 
   React.useEffect(() => {
+
      const getSlotData = () => {
        let parameters = {params: {'id' : slotID.id}};
 
@@ -47,17 +48,23 @@ const Graphs = (props) => {
        if(timeStr !== null)
          parameters.params.date = dateStr;
 
-       console.log('params', parameters);
-
        axios.get('http://localhost:8080/getSlotGraphData',
        parameters).then(response => {
          let data = response.data;
+
+         let dateLabel = dateStr;
+
+         if(dateLabel === null)
+         {
+            dateLabel = data[0].Date;
+            setDate(dateLabel);
+         }
 
          setChartData({
              labels: data.map(item => item.Time),
              datasets: [
                {
-                 label: slotID.name + '  ' + dateStr,
+                 label: slotID.name + '  ' + dateLabel,
                  data: data.map(item => item.Value),
                  fill: true,
                  backgroundColor: "rgba(75,192,192,0.2)",
@@ -65,7 +72,7 @@ const Graphs = (props) => {
                  }
                ]
            });
-           console.log('set show chart');
+
            setShowChart(true);
        }).catch(error => {
                console.error('Error retrieving slot graph!', error);

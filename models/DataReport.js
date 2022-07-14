@@ -302,9 +302,9 @@ DataReport.querySlotGraphData = async(query) => {
           const collection = await slot.db.find(
             { }, null, {
             limit: 150
-          }).sort().exec();
-
-          return collection;
+          }).sort({_id: -1}).exec();
+          console.log(collection);
+          return collection.reverse();
         } catch (err) {
           console.log('err', err);
           return err;
