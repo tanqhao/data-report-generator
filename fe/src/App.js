@@ -39,7 +39,7 @@ function App() {
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <div style={{ height: '70%', width: '75%', background: 'white' }}>
+        <div style={{ height: '60%', width: '75%', background: 'white' }}>
 
         <ButtonAppBar onPageSelected={appBarButtonHandler}/>
 

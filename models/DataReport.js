@@ -270,25 +270,47 @@ function deleteHeaderAndAddDateFromDB(slot)
 DataReport.querySlotGraphData = async(query) => {
   console.log('query slot graph', query);
 
-  let date = new Date();
-  console.log('date', date.toLocaleDateString());
-  console.log('time', date.toJSON());
+  let time = query.time;
+  let date = query.date;
+
+  // let date = new Date();
+  // console.log('date', date.toLocaleDateString());
+  // console.log('time', date.toJSON());
 
   for(let slot of allSlots) {
     if(slot.id == query.id)
     {
       //console.log(slot);
+
+      if(time !== undefined && date !== undefined) {
         try {
+          console.log(date);
+          console.log(time);
           const collection = await slot.db.find(
-            { }, null, {
+            { Date: date, Time:  { $gte :  time, $lte: '18:00:00' } }, null, {
             limit: 150
           }).sort().exec();
-          //console.log(collection);
+          console.log(collection)
           return collection;
         } catch (err) {
           console.log('err', err);
           return err;
         }
+      }
+      else {
+        try {
+          const collection = await slot.db.find(
+            { }, null, {
+            limit: 150
+          }).sort().exec();
+
+          return collection;
+        } catch (err) {
+          console.log('err', err);
+          return err;
+        }
+      }
+
     }
   }
 }
