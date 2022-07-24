@@ -15,7 +15,7 @@ let selectedIDs;
 
 const buttonHandler = (event) => {
   console.log('selectedID', selectedIDs);
-   axios.post(`http://localhost:8080/downloadSlots`, selectedIDs)
+   axios.post(`http://localhost:${process.env.REACT_APP_PORT}/downloadSlots`, selectedIDs)
        .then(response => console.log(response))
        .catch(error => {
            console.error('Error downloading slots csv data!', error);

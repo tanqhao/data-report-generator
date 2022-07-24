@@ -1,8 +1,9 @@
 
 import * as React from 'react';
-//import CircularProgress from '@mui/material/CircularProgress'
+
 import axios from 'axios';
 import ChartData from './Chart';
+import TimeOptions from './TimeOptions';
 
 
 import Box from '@mui/material/Box';
@@ -22,6 +23,10 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 
+import Fab from '@mui/material/Fab';
+import TimeIcon from '@mui/icons-material/Timer';
+import DateIcon from '@mui/icons-material/EventNote';
+
 
 const Graphs = (props) => {
   const[showChart, setShowChart] = React.useState(false);
@@ -33,9 +38,22 @@ const Graphs = (props) => {
   const[dateStr, setDateStr] = React.useState(null);
   const[timeStr, setTimeStr] = React.useState(null);
 
+  const[timeInterval, setTimeInterval] = React.useState({interval : 'seconds', value: 5});
+
+
   const [state, setState] = React.useState({
     left: false,
+    top: false
   });
+
+
+  const timeOptionHandler = (option) => {
+    console.log('timeOptionHandler' , option );
+
+    setState((prevState, props) => ({top: false, ...prevState.left}));
+    setTimeInterval({interval:option.interval, value: option.value});
+  }
+
 
   React.useEffect(() => {
 
@@ -43,22 +61,45 @@ const Graphs = (props) => {
        let parameters = {params: {'id' : slotID.id}};
 
        if(dateStr !== null)
-         parameters.params.time = timeStr;
-
-       if(timeStr !== null)
          parameters.params.date = dateStr;
 
-       axios.get('http://localhost:8080/getSlotGraphData',
+       if(timeStr !== null) {
+          parameters.params.time = timeStr;
+          let endTime = time;
+
+          // end time ( to display 200 points on chart based on interval)
+          if (timeInterval.interval === 'seconds')
+            endTime.setSeconds(200 * timeInterval.value);
+          else if (timeInterval.interval === 'minutes')
+            endTime.setMinutes(200 * timeInterval.value);
+          else if (timeInterval.interval === 'hours')
+            endTime.setHours(24 * timeInterval.value);
+
+          let endTimeStr = formatTime(endTime);
+          parameters.params.endTime = endTimeStr;
+
+          parameters.params.interval = timeInterval.interval;
+          parameters.params.intervalValue = timeInterval.value;
+        }
+
+       console.log('param', parameters);
+       axios.get(`http://localhost:${process.env.REACT_APP_PORT}/getSlotGraphData`,
        parameters).then(response => {
+
          let data = response.data;
+
+         console.log(data);
 
          let dateLabel = dateStr;
 
          if(dateLabel === null)
          {
             dateLabel = data[0].Date;
-            setDate(dateLabel);
+            //setDate(dateLabel);
          }
+
+         if(!data.length)
+           dateLabel += '. \t No data found.'
 
          setChartData({
              labels: data.map(item => item.Time),
@@ -82,10 +123,11 @@ const Graphs = (props) => {
      {
        getSlotData();
      }
-  }, [slotID, dateStr, timeStr]);
+  }, [slotID, dateStr, timeStr, timeInterval]);
 
 
   const toggleDrawer = (anchor, open) => (event) => {
+    console.log('anchor', anchor);
      if (
        event.type === "keydown" &&
        (event.key === "Tab" || event.key === "Shift")
@@ -143,7 +185,7 @@ const Graphs = (props) => {
       }
    }
 
-   const list = (anchor) => (
+   const slotList = (anchor) => (
      <Box
        sx={{ width: 250 }}
        role="presentation"
@@ -171,10 +213,31 @@ const Graphs = (props) => {
      </Box>
    );
 
+   const timeOptionsList = (anchor) => (
+     <Box
+       sx={{ width: 'auto' }}
+       role="presentation"
+     >
+       <TimeOptions onIntervalSelection={timeOptionHandler} intervalOptions={timeInterval}/>
+     </Box>
+   );
+
   return (
     <div>
-    {(['left']).map((anchor) => (
-      <div key={anchor} style={{display: 'flex', 'justifyContent': 'space-around', 'padding': '1%'}}>
+
+      <div  style={{display: 'flex', 'justifyContent': 'space-around', 'padding': '1%'}}>
+      <div style={{display: 'initial'}}>
+      <Fab size="small" color="secondary" aria-label="time" onClick={toggleDrawer('top', true)}>
+        <TimeIcon />
+      </Fab>
+
+      <Drawer
+        anchor={'top'}
+        open={state['top']}
+        onClose={toggleDrawer('top', false)}
+      >
+        {timeOptionsList('top')}
+      </Drawer>
 
       <LocalizationProvider dateAdapter={AdapterDateFns}>
           <TimePicker
@@ -190,16 +253,18 @@ const Graphs = (props) => {
             renderInput={(params) => <TextField {...params} />}
           />
         </LocalizationProvider>
+        </div>
 
-
-        <Button onClick={toggleDrawer(anchor, true)}>Change Slot</Button>
+        <Button onClick={toggleDrawer('left', true)}>Change Slot</Button>
         <Drawer
-          anchor={anchor}
-          open={state[anchor]}
-          onClose={toggleDrawer(anchor, false)}
+          anchor={'left'}
+          open={state['left']}
+          onClose={toggleDrawer('left', false)}
         >
-          {list(anchor)}
+          {slotList('left')}
         </Drawer>
+
+        <div style={{display: 'initial'}}>
 
         <LocalizationProvider dateAdapter={AdapterDateFns}>
          <DatePicker
@@ -213,8 +278,12 @@ const Graphs = (props) => {
          />
        </LocalizationProvider>
 
+       <Fab size="small" color="secondary" aria-label="date">
+         <DateIcon />
+       </Fab>
+       </div>
+
       </div>
-    ))}
 
     {showChart ? (<ChartData data={chartData}/>) : null}
 

@@ -24,7 +24,7 @@ function App() {
   }
 
   React.useEffect(() => {
-    axios.get('http://localhost:8080')
+    axios.get(`http://localhost:${process.env.REACT_APP_PORT}`)
         .then(response => {
           setSlotsName(response.data)
           setSlotsNameGot(true);

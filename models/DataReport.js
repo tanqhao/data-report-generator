@@ -267,11 +267,47 @@ function deleteHeaderAndAddDateFromDB(slot)
   }
 }
 
+function mapIntervalValue(interval, intervalValue) {
+  let intervalStr = '';
+  switch (intervalValue) {
+    case '5': intervalStr = `[0-9][5|0]`;
+    break;
+    case '10': intervalStr = `[0-9]0`;
+    break;
+    case '15': intervalStr = `[0][0]|[1][5]|[3][0]|[4][5]`;
+    break;
+    case '20': intervalStr = `[0][0]|[2][0]|[4][0]`;
+    break;
+    case '25': intervalStr = `[0][0]|[2][5]|[5][0]`;
+    break;
+    case '30': intervalStr = `[0][0]|[3][0]`;
+    break;
+    case '60': intervalStr = `[0][0]`;
+    break;
+    default: intervalStr = intervalValue;
+    break;
+    }
+
+    let fullIntervalStr;
+
+    if(interval === 'seconds')
+      fullIntervalStr = `[0-9][0-9]:[0-9][0-9]:${intervalStr}`;
+    else if(interval === 'minutes')
+      fullIntervalStr = `[0-9][0-9]:${intervalStr}:[0][0]`;
+    else if(interval ==='hours')
+      fullIntervalStr = `${intervalStr}:[0-9][0-9]:[0-9][0-9]}`;
+
+    return fullIntervalStr;
+}
+
 DataReport.querySlotGraphData = async(query) => {
   console.log('query slot graph', query);
 
   let time = query.time;
+  let endTime = query.endTime;
   let date = query.date;
+  let intervalValue = query.intervalValue;
+  let interval = query.interval;
 
   // let date = new Date();
   // console.log('date', date.toLocaleDateString());
@@ -282,15 +318,45 @@ DataReport.querySlotGraphData = async(query) => {
     {
       //console.log(slot);
 
-      if(time !== undefined && date !== undefined) {
+      if(date !== undefined) {
+
         try {
-          console.log(date);
-          console.log(time);
-          const collection = await slot.db.find(
-            { Date: date, Time:  { $gte :  time, $lte: '18:00:00' } }, null, {
-            limit: 150
-          }).sort().exec();
-          console.log(collection)
+
+          if(time === undefined)
+          {
+            time = '00:00:00';
+            endTime = '23:59:59'
+          }
+
+          if(intervalValue === undefined)
+          {
+            intervalValue = 5;
+          }
+
+          // if(interval.length == 1)
+          // {
+          //   interval = `[0-9]${interval}|0`;
+          // }
+
+          let intervalStr = mapIntervalValue(interval, intervalValue);
+
+          console.log('intervalstr',intervalStr);
+
+          const collection = await slot.db.aggregate([
+            {
+                $match: {
+                    'Date' : { $eq: date},
+                    'Time' : { $gte :  time, $lte: endTime }
+                }
+            },
+            {
+                $match: {
+                    'Time' : { $regex : `${intervalStr}+$`}
+                }
+            },
+            {$limit: 200}
+          ]).exec();
+
           return collection;
         } catch (err) {
           console.log('err', err);
@@ -298,12 +364,13 @@ DataReport.querySlotGraphData = async(query) => {
         }
       }
       else {
+        console.log('get latest data');
         try {
           const collection = await slot.db.find(
             { }, null, {
-            limit: 150
+            limit: 200
           }).sort({_id: -1}).exec();
-          console.log(collection);
+          //console.log(collection);
           return collection.reverse();
         } catch (err) {
           console.log('err', err);
@@ -316,42 +383,17 @@ DataReport.querySlotGraphData = async(query) => {
 }
 
 module.exports = DataReport;
+//new Date(Date.now() + (5 * 60 * 1000));
 
-// db.getCollection('ratemps').find(  {
-//     Date: '07-09-2022',Time:  { $gte :  '14:00:00', $lte : '14:30:00'} })
 
-// function emailOutputData() {
-//   var transporter = nodemailer.createTransport({
-//     service: 'gmail',
-//     auth: {
-//       user: 'xueli363615@gmail.com',
-//       pass: 'basketball2'
+// db.getCollection('ratemps').aggregate([
+// {
+//     $match: {
+//         'Date' : { $eq: '07-09-2022'},
+//         'Time' : { $gte :  '14:00:00', $lte: '15:00:00' }
+//     },
+//     $match: {
+//         'Time' : { $regex : '^[0-9][0-9]:[0-9][0-9]:00+$'}
 //     }
-//   });
-//
-//   let mailOptions = {
-//     from: 'xueli363615@gmail.com',
-//     to: 'xueli363615@gmail.com',
-//     //to: 'xueli363615@gmail.com, desmondzheng82@gmail.com',
-//     subject: 'Sending Email using Node.js',
-//     text: 'That was easy!',
-//     attachments: [{
-//         filename: 'newfile.txt',
-//         contentType: 'text/plain',
-//         path: './newfile.txt'
-//       },
-//       {
-//         filename: 'pikachu.png',
-//         path: './pikachu.png'
-//       }
-//     ],
-//   };
-//
-//   transporter.sendMail(mailOptions, function(error, info) {
-//     if (error) {
-//       console.log(error);
-//     } else {
-//       console.log('Email sent: ' + info.response);
-//     }
-//   });
 // }
+// ])
